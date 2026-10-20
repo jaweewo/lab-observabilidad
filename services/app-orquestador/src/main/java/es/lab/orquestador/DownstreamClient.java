@@ -1,4 +1,4 @@
-package es.lab.sandra;
+package es.lab.orquestador;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,22 +23,22 @@ public class DownstreamClient {
     private static final Pattern RESULTADO = Pattern.compile("<resultado>(.*?)</resultado>", Pattern.DOTALL);
 
     private final RestTemplate restTemplate;
-    private final String evacsvUrl;
+    private final String gestorUrl;
     private final String reportUrl;
     private final String insideUrl;
 
     public DownstreamClient(RestTemplate restTemplate,
-                            @Value("${downstream.evacsv-url}") String evacsvUrl,
+                            @Value("${downstream.gestor-url}") String gestorUrl,
                             @Value("${downstream.report-url}") String reportUrl,
                             @Value("${downstream.inside-url}") String insideUrl) {
         this.restTemplate = restTemplate;
-        this.evacsvUrl = evacsvUrl;
+        this.gestorUrl = gestorUrl;
         this.reportUrl = reportUrl;
         this.insideUrl = insideUrl;
     }
 
     public String registrarDocumento(String idSolicitante) {
-        return invocar(evacsvUrl + "/ws/documentos", "http://lab.es/evacsv", "registrarDocumento",
+        return invocar(gestorUrl + "/ws/documentos", "http://lab.es/gestor", "registrarDocumento",
                 "<idSolicitante>" + idSolicitante + "</idSolicitante>");
     }
 

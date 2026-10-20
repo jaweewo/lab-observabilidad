@@ -6,7 +6,7 @@
             <!-- trace_id / span_id los inyecta en el MDC el agente de OpenTelemetry -->
             <includeMdcKeyName>trace_id</includeMdcKeyName>
             <includeMdcKeyName>span_id</includeMdcKeyName>
-            <customFields>{"service":"${OTEL_SERVICE_NAME:-app-evacsv}"}</customFields>
+            <customFields>{"service":"${OTEL_SERVICE_NAME:-app-orquestador}"}</customFields>
         </encoder>
     </appender>
 

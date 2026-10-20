@@ -3,13 +3,13 @@ server:
 
 spring:
   application:
-    name: app-sandra
+    name: app-orquestador
 
 cxf:
   path: /ws
 
 # Servicios de backend (en docker-compose se enrutan por el fault-injector)
 downstream:
-  evacsv-url: ${EVACSV_URL:http://app-evacsv:8081}
+  gestor-url: ${GESTOR_URL:http://app-gestor:8081}
   report-url: ${REPORT_URL:http://app-report:8082}
   inside-url: ${INSIDE_URL:http://app-inside:8083}

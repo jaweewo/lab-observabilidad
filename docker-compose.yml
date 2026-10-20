@@ -20,18 +20,18 @@ x-app-common: &app-common
 
 services:
   # ---------------------------------------------------------------- Aplicaciones
-  app-sandra:
+  app-orquestador:
     <<: *app-common
-    build: ./services/app-sandra
-    image: lab-observabilidad/app-sandra:latest
-    container_name: app-sandra
+    build: ./services/app-orquestador
+    image: lab-observabilidad/app-orquestador:latest
+    container_name: app-orquestador
     environment:
       <<: *otel-env
-      OTEL_SERVICE_NAME: app-sandra
-      # Por defecto SANDRA llama a los demás servicios a través del fault-injector,
+      OTEL_SERVICE_NAME: app-orquestador
+      # Por defecto el orquestador llama a los demás servicios a través del fault-injector,
       # así los fallos inyectados afectan al flujo real. Para llamar directamente
-      # usar p. ej. EVACSV_URL=http://app-evacsv:8081
-      EVACSV_URL: ${EVACSV_URL:-http://fault-injector:9999/proxy/app-evacsv}
+      # usar p. ej. GESTOR_URL=http://app-gestor:8081
+      GESTOR_URL: ${GESTOR_URL:-http://fault-injector:9999/proxy/app-gestor}
       REPORT_URL: ${REPORT_URL:-http://fault-injector:9999/proxy/app-report}
       INSIDE_URL: ${INSIDE_URL:-http://fault-injector:9999/proxy/app-inside}
     ports:
@@ -39,18 +39,18 @@ services:
     depends_on:
       - otel-collector
       - fault-injector
-      - app-evacsv
+      - app-gestor
       - app-report
       - app-inside
 
-  app-evacsv:
+  app-gestor:
     <<: *app-common
-    build: ./services/app-evacsv
-    image: lab-observabilidad/app-evacsv:latest
-    container_name: app-evacsv
+    build: ./services/app-gestor
+    image: lab-observabilidad/app-gestor:latest
+    container_name: app-gestor
     environment:
       <<: *otel-env
-      OTEL_SERVICE_NAME: app-evacsv
+      OTEL_SERVICE_NAME: app-gestor
 
   app-report:
     <<: *app-common

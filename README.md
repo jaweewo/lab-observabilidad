@@ -4,10 +4,10 @@ Laboratorio de formación para practicar **trazas, métricas y logs** sobre una 
 de servicios SOAP en Java (Spring Boot + Apache CXF), instrumentada con OpenTelemetry.
 
 ```
-                 ┌──────────────┐      ┌────────────────┐      ┌──────────────┐
-  cliente SOAP ─▶│  app-sandra  │─────▶│ fault-injector │─────▶│  app-evacsv  │  gestor documental
-                 │ (orquestador)│      │   (proxy 9999) │─────▶│  app-inside  │  expediente electrónico
-                 └──────┬───────┘      └────────────────┘─────▶│  app-report  │  generación PDF
+                 ┌─────────────────┐   ┌────────────────┐      ┌──────────────┐
+  cliente SOAP ─▶│ app-orquestador │──▶│ fault-injector │─────▶│  app-gestor  │  gestor documental
+                 │  (orquestador)  │   │   (proxy 9999) │─────▶│  app-inside  │  expediente electrónico
+                 └──────┬──────────┘   └────────────────┘─────▶│  app-report  │  generación PDF
                         │ OTLP                                  └──────┬───────┘
                         ▼                                              │ OTLP
                  ┌──────────────┐  trazas   ┌────────┐                 │
@@ -19,15 +19,15 @@ de servicios SOAP en Java (Spring Boot + Apache CXF), instrumentada con OpenTele
   logs Docker ─▶ Fluent Bit ─▶ Loki ─┴──▶ Grafana
 ```
 
-| Servicio     | Puerto | Equivalente     | Operación SOAP                      |
-|--------------|--------|-----------------|-------------------------------------|
-| app-sandra   | 8080   | SANDRA          | `/ws/licencias` → `solicitarLicencia` |
-| app-evacsv   | 8081   | EVACSV          | `/ws/documentos` → `registrarDocumento` |
-| app-report   | 8082   | ReportService   | `/ws/informes` → `generarInforme`   |
-| app-inside   | 8083   | INSIDE          | `/ws/expedientes` → `crearExpediente` |
+| Servicio        | Puerto | Equivalente        | Operación SOAP                          |
+|-----------------|--------|--------------------|-----------------------------------------|
+| app-orquestador | 8080   | Orquestador        | `/ws/licencias` → `solicitarLicencia`   |
+| app-gestor      | 8081   | Gestor documental  | `/ws/documentos` → `registrarDocumento` |
+| app-report      | 8082   | ReportService      | `/ws/informes` → `generarInforme`       |
+| app-inside      | 8083   | INSIDE             | `/ws/expedientes` → `crearExpediente`   |
 
 Cada servicio simula una latencia aleatoria de 50–200 ms y devuelve una respuesta fija.
-`app-sandra` llama a los otros tres con `RestTemplate` **a través del fault-injector**, de modo
+`app-orquestador` llama a los otros tres con `RestTemplate` **a través del fault-injector**, de modo
 que los fallos inyectados se reflejan en el flujo completo.
 
 ## Requisitos
@@ -84,7 +84,7 @@ Para empezar totalmente de cero (borra volúmenes e imágenes de los servicios y
 | Grafana         | http://localhost:3000                       | Dashboards, Explore de Loki/Prometheus/Jaeger (admin/admin, acceso anónimo habilitado) |
 | Prometheus      | http://localhost:9090                       | Métricas OTel (vía collector) y JMX de cada JVM         |
 | Jaeger          | http://localhost:16686                      | Búsqueda y visualización de trazas distribuidas        |
-| app-sandra      | http://localhost:8080/ws/licencias?wsdl     | WSDL del orquestador SOAP                               |
+| app-orquestador      | http://localhost:8080/ws/licencias?wsdl     | WSDL del orquestador SOAP                               |
 | fault-injector  | http://localhost:9999/fault                 | API de inyección de fallos                              |
 
 En Grafana se aprovisiona el dashboard **Laboratorio → Lab Observabilidad — Visión general** y los
@@ -93,15 +93,15 @@ traza (campo `trace_id`) y desde un span a sus logs.
 
 ## Fault injector
 
-El fault-injector actúa de proxy (`/proxy/<servicio>/<ruta>`) delante de `app-evacsv`,
+El fault-injector actúa de proxy (`/proxy/<servicio>/<ruta>`) delante de `app-gestor`,
 `app-report` y `app-inside`. Por defecto no inyecta nada.
 
-**Añadir 1,5 s de latencia a EVACSV:**
+**Añadir 1,5 s de latencia al gestor documental:**
 
 ```bash
 curl -X POST http://localhost:9999/fault \
   -H 'Content-Type: application/json' \
-  -d '{"service": "app-evacsv", "type": "latency", "ms": 1500}'
+  -d '{"service": "app-gestor", "type": "latency", "ms": 1500}'
 ```
 
 **Hacer fallar el 30 % de las llamadas a ReportService:**
@@ -133,10 +133,10 @@ for i in $(seq 1 50); do ./scripts/smoke-test.sh > /dev/null; done
 Después, observa en Jaeger los spans lentos o con error, en Grafana la subida de latencia p95 y
 de errores 5xx, y en Loki los logs correlacionados por `trace_id`.
 
-Para que `app-sandra` llame directamente a los servicios sin pasar por el proxy, define en `.env`:
+Para que `app-orquestador` llame directamente a los servicios sin pasar por el proxy, define en `.env`:
 
 ```
-EVACSV_URL=http://app-evacsv:8081
+GESTOR_URL=http://app-gestor:8081
 REPORT_URL=http://app-report:8082
 INSIDE_URL=http://app-inside:8083
 ```
@@ -148,7 +148,7 @@ lab-observabilidad/
 ├── docker-compose.yml
 ├── Makefile
 ├── .env
-├── services/            # app-sandra, app-evacsv, app-report, app-inside (Spring Boot + CXF)
+├── services/            # app-orquestador, app-gestor, app-report, app-inside (Spring Boot + CXF)
 ├── fault-injector/      # Flask, puerto 9999
 ├── otel/                # configuración del OpenTelemetry Collector
 ├── fluent-bit/          # recogida de logs Docker → Loki

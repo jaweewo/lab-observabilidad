@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: app-evacsv
+    name: app-gestor
 
 cxf:
   path: /ws

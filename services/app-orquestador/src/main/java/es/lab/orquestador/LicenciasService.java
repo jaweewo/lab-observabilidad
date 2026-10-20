@@ -1,4 +1,4 @@
-package es.lab.sandra;
+package es.lab.orquestador;
 
 import jakarta.jws.WebMethod;
 import jakarta.jws.WebParam;
@@ -12,10 +12,10 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Servicio SOAP de solicitud de licencias. Orquesta el flujo:
- * EVACSV (registro documental) → INSIDE (expediente) → ReportService (PDF).
+ * gestor documental (registro) → INSIDE (expediente) → ReportService (PDF).
  */
 @Service
-@WebService(serviceName = "LicenciasService", targetNamespace = "http://lab.es/sandra")
+@WebService(serviceName = "LicenciasService", targetNamespace = "http://lab.es/orquestador")
 public class LicenciasService {
 
     private static final Logger log = LoggerFactory.getLogger(LicenciasService.class);

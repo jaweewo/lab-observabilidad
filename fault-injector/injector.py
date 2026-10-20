@@ -2,7 +2,7 @@
 Fault injector del laboratorio.
 
 API de control:
-  POST   /fault   {"service": "app-evacsv", "type": "latency", "ms": 1500}
+  POST   /fault   {"service": "app-gestor", "type": "latency", "ms": 1500}
                   {"service": "app-report", "type": "error",   "rate": 0.3}
   DELETE /fault   desactiva todos los fallos
   GET    /fault   estado actual
@@ -24,8 +24,8 @@ import requests
 from flask import Flask, Response, jsonify, request
 
 SERVICES = {
-    "app-sandra": os.getenv("APP_SANDRA_URL", "http://app-sandra:8080"),
-    "app-evacsv": os.getenv("APP_EVACSV_URL", "http://app-evacsv:8081"),
+    "app-orquestador": os.getenv("APP_ORQUESTADOR_URL", "http://app-orquestador:8080"),
+    "app-gestor": os.getenv("APP_GESTOR_URL", "http://app-gestor:8081"),
     "app-report": os.getenv("APP_REPORT_URL", "http://app-report:8082"),
     "app-inside": os.getenv("APP_INSIDE_URL", "http://app-inside:8083"),
 }

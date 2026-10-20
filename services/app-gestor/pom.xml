@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>es.lab</groupId>
-    <artifactId>app-sandra</artifactId>
+    <artifactId>app-gestor</artifactId>
     <version>1.0.0</version>
-    <name>app-sandra</name>
-    <description>Orquestador SOAP (equivalente a SANDRA)</description>
+    <name>app-gestor</name>
+    <description>Gestor documental SOAP</description>
 
     <properties>
         <java.version>17</java.version>

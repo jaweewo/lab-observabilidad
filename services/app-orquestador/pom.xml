@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>es.lab</groupId>
-    <artifactId>app-evacsv</artifactId>
+    <artifactId>app-orquestador</artifactId>
     <version>1.0.0</version>
-    <name>app-evacsv</name>
-    <description>Gestor documental SOAP (equivalente a EVACSV)</description>
+    <name>app-orquestador</name>
+    <description>Orquestador SOAP</description>
 
     <properties>
         <java.version>17</java.version>

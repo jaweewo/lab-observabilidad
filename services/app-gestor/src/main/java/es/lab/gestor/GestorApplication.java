@@ -1,38 +1,26 @@
-package es.lab.sandra;
+package es.lab.gestor;
 
 import jakarta.xml.ws.Endpoint;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxws.EndpointImpl;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.web.client.RestTemplate;
-
-import java.time.Duration;
 
 @SpringBootApplication
-public class SandraApplication {
+public class GestorApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SandraApplication.class, args);
+        SpringApplication.run(GestorApplication.class, args);
     }
 
-    /** Publica el servicio SOAP en /ws/licencias (WSDL: /ws/licencias?wsdl). */
+    /** Publica el servicio SOAP en /ws/documentos (WSDL: /ws/documentos?wsdl). */
     @Bean
-    public Endpoint licenciasEndpoint(Bus bus, LicenciasService service) {
+    public Endpoint documentosEndpoint(Bus bus, DocumentosService service) {
         EndpointImpl endpoint = new EndpointImpl(bus, service);
-        endpoint.publish("/licencias");
+        endpoint.publish("/documentos");
         return endpoint;
-    }
-
-    @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        return builder
-                .setConnectTimeout(Duration.ofSeconds(2))
-                .setReadTimeout(Duration.ofSeconds(10))
-                .build();
     }
 
     @Bean

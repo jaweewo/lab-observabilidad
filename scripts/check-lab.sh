@@ -21,11 +21,11 @@ check() {
 }
 
 printf "${BOLD}Estado del laboratorio de observabilidad${NC}\n"
-check "Grafana"        "http://localhost:3000/api/health"
-check "Prometheus"     "http://localhost:9090/-/ready"
-check "Jaeger"         "http://localhost:16686/"
-check "app-sandra"     "http://localhost:8080/ws/licencias?wsdl"
-check "fault-injector" "http://localhost:9999/fault"
+check "Grafana"         "http://localhost:3000/api/health"
+check "Prometheus"      "http://localhost:9090/-/ready"
+check "Jaeger"          "http://localhost:16686/"
+check "app-orquestador" "http://localhost:8080/ws/licencias?wsdl"
+check "fault-injector"  "http://localhost:9999/fault"
 
 echo
 if [[ $failures -eq 0 ]]; then

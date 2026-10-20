@@ -16,10 +16,10 @@ scrape_configs:
   # Métricas JMX de cada JVM (jmx_prometheus_javaagent en :9404)
   - job_name: jmx
     static_configs:
-      - targets: ["app-sandra:9404"]
-        labels: {service: app-sandra}
-      - targets: ["app-evacsv:9404"]
-        labels: {service: app-evacsv}
+      - targets: ["app-orquestador:9404"]
+        labels: {service: app-orquestador}
+      - targets: ["app-gestor:9404"]
+        labels: {service: app-gestor}
       - targets: ["app-report:9404"]
         labels: {service: app-report}
       - targets: ["app-inside:9404"]

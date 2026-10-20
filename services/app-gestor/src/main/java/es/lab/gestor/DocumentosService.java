@@ -1,4 +1,4 @@
-package es.lab.evacsv;
+package es.lab.gestor;
 
 import jakarta.jws.WebMethod;
 import jakarta.jws.WebParam;
@@ -10,9 +10,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-/** Servicio SOAP de registro documental (stub de EVACSV). */
+/** Servicio SOAP de registro documental (stub del gestor documental). */
 @Service
-@WebService(serviceName = "DocumentosService", targetNamespace = "http://lab.es/evacsv")
+@WebService(serviceName = "DocumentosService", targetNamespace = "http://lab.es/gestor")
 public class DocumentosService {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentosService.class);
@@ -22,7 +22,7 @@ public class DocumentosService {
     public String registrarDocumento(@WebParam(name = "idSolicitante") String idSolicitante) {
         log.info("registrarDocumento recibido: idSolicitante={}", idSolicitante);
         simularLatencia();
-        String resultado = "DOC-EVACSV-2026-0001";
+        String resultado = "DOC-GESTOR-2026-0001";
         log.info("registrarDocumento completado: {}", resultado);
         return resultado;
     }

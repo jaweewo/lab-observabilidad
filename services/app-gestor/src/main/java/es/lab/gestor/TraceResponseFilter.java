@@ -1,4 +1,4 @@
-package es.lab.sandra;
+package es.lab.gestor;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;

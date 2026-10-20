@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Envía una solicitud de licencia SOAP a app-sandra y muestra el Trace ID.
+# Envía una solicitud de licencia SOAP a app-orquestador y muestra el Trace ID.
 set -euo pipefail
 
-URL="${SANDRA_URL:-http://localhost:8080}/ws/licencias"
+URL="${ORQUESTADOR_URL:-http://localhost:8080}/ws/licencias"
 
 read -r -d '' SOAP_REQUEST <<'EOF' || true
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:lic="http://lab.es/sandra">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:lic="http://lab.es/orquestador">
   <soapenv:Header/>
   <soapenv:Body>
     <lic:solicitarLicencia>

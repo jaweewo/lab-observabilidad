@@ -1,26 +1,38 @@
-package es.lab.evacsv;
+package es.lab.orquestador;
 
 import jakarta.xml.ws.Endpoint;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxws.EndpointImpl;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.RestTemplate;
+
+import java.time.Duration;
 
 @SpringBootApplication
-public class EvacsvApplication {
+public class OrquestadorApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(EvacsvApplication.class, args);
+        SpringApplication.run(OrquestadorApplication.class, args);
     }
 
-    /** Publica el servicio SOAP en /ws/documentos (WSDL: /ws/documentos?wsdl). */
+    /** Publica el servicio SOAP en /ws/licencias (WSDL: /ws/licencias?wsdl). */
     @Bean
-    public Endpoint documentosEndpoint(Bus bus, DocumentosService service) {
+    public Endpoint licenciasEndpoint(Bus bus, LicenciasService service) {
         EndpointImpl endpoint = new EndpointImpl(bus, service);
-        endpoint.publish("/documentos");
+        endpoint.publish("/licencias");
         return endpoint;
+    }
+
+    @Bean
+    public RestTemplate restTemplate(RestTemplateBuilder builder) {
+        return builder
+                .setConnectTimeout(Duration.ofSeconds(2))
+                .setReadTimeout(Duration.ofSeconds(10))
+                .build();
     }
 
     @Bean
