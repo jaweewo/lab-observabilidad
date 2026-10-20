@@ -1,0 +1,12 @@
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  # Tomcat embebido: hilos y sesiones
+  - pattern: 'Tomcat<type=ThreadPool, name="(\w+-\w+)-(\d+)"><>(currentThreadCount|currentThreadsBusy|maxThreads)'
+    name: tomcat_threadpool_$3
+    labels:
+      port: "$2"
+  - pattern: 'Tomcat<type=Manager, host=([-\w\.]+), context=([-\w\.\/]*)><>(activeSessions)'
+    name: tomcat_session_$3
+  # Resto de MBeans por defecto
+  - pattern: ".*"

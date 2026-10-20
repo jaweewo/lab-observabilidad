@@ -1,0 +1,7 @@
+# Los scripts y configs se ejecutan dentro de contenedores Linux: forzar LF
+*.sh   text eol=lf
+*.conf text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+Makefile text eol=lf
+Dockerfile text eol=lf

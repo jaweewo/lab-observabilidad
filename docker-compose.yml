@@ -1,0 +1,178 @@
+name: lab-observabilidad
+
+# Variables comunes de OpenTelemetry para todos los servicios app-*
+x-otel-env: &otel-env
+  JAVA_TOOL_OPTIONS: -javaagent:/opt/opentelemetry-javaagent.jar
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+  OTEL_METRICS_EXPORTER: otlp
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_LOGS_EXPORTER: none
+  OTEL_INSTRUMENTATION_LOGBACK_APPENDER_ENABLED: "true"
+  OTEL_RESOURCE_ATTRIBUTES: deployment.environment=lab
+
+x-app-common: &app-common
+  restart: unless-stopped
+  depends_on:
+    - otel-collector
+  networks:
+    - lab
+
+services:
+  # ---------------------------------------------------------------- Aplicaciones
+  app-sandra:
+    <<: *app-common
+    build: ./services/app-sandra
+    image: lab-observabilidad/app-sandra:latest
+    container_name: app-sandra
+    environment:
+      <<: *otel-env
+      OTEL_SERVICE_NAME: app-sandra
+      # Por defecto SANDRA llama a los demás servicios a través del fault-injector,
+      # así los fallos inyectados afectan al flujo real. Para llamar directamente
+      # usar p. ej. EVACSV_URL=http://app-evacsv:8081
+      EVACSV_URL: ${EVACSV_URL:-http://fault-injector:9999/proxy/app-evacsv}
+      REPORT_URL: ${REPORT_URL:-http://fault-injector:9999/proxy/app-report}
+      INSIDE_URL: ${INSIDE_URL:-http://fault-injector:9999/proxy/app-inside}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - otel-collector
+      - fault-injector
+      - app-evacsv
+      - app-report
+      - app-inside
+
+  app-evacsv:
+    <<: *app-common
+    build: ./services/app-evacsv
+    image: lab-observabilidad/app-evacsv:latest
+    container_name: app-evacsv
+    environment:
+      <<: *otel-env
+      OTEL_SERVICE_NAME: app-evacsv
+
+  app-report:
+    <<: *app-common
+    build: ./services/app-report
+    image: lab-observabilidad/app-report:latest
+    container_name: app-report
+    environment:
+      <<: *otel-env
+      OTEL_SERVICE_NAME: app-report
+
+  app-inside:
+    <<: *app-common
+    build: ./services/app-inside
+    image: lab-observabilidad/app-inside:latest
+    container_name: app-inside
+    environment:
+      <<: *otel-env
+      OTEL_SERVICE_NAME: app-inside
+
+  fault-injector:
+    build: ./fault-injector
+    image: lab-observabilidad/fault-injector:latest
+    container_name: fault-injector
+    restart: unless-stopped
+    ports:
+      - "9999:9999"
+    networks:
+      - lab
+
+  # -------------------------------------------------------------- Observabilidad
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:${OTEL_COLLECTOR_VERSION}
+    container_name: otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel/collector-config.yaml:/etc/otelcol/config.yaml:ro
+    depends_on:
+      - jaeger
+    networks:
+      - lab
+
+  jaeger:
+    image: jaegertracing/all-in-one:${JAEGER_VERSION}
+    container_name: jaeger
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "${JAEGER_PORT}:16686"
+    networks:
+      - lab
+
+  fluent-bit:
+    image: fluent/fluent-bit:2.2.2
+    container_name: fluent-bit
+    restart: unless-stopped
+    volumes:
+      - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      - loki
+    networks:
+      - lab
+
+  loki:
+    image: grafana/loki:${LOKI_VERSION}
+    container_name: loki
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/loki-config.yaml"]
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki-data:/loki
+    networks:
+      - lab
+
+  prometheus:
+    image: prom/prometheus:${PROMETHEUS_VERSION}
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT}:9090"
+    networks:
+      - lab
+
+  grafana:
+    image: grafana/grafana-oss:${GRAFANA_VERSION}
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_USERS_DEFAULT_THEME: dark
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+    networks:
+      - lab
+
+networks:
+  lab:
+    name: lab-observabilidad
+
+volumes:
+  loki-data:
+  prometheus-data:
+  grafana-data:

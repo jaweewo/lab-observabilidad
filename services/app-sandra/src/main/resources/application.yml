@@ -1,0 +1,15 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: app-sandra
+
+cxf:
+  path: /ws
+
+# Servicios de backend (en docker-compose se enrutan por el fault-injector)
+downstream:
+  evacsv-url: ${EVACSV_URL:http://app-evacsv:8081}
+  report-url: ${REPORT_URL:http://app-report:8082}
+  inside-url: ${INSIDE_URL:http://app-inside:8083}

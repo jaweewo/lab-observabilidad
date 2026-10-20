@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Logs JSON a stdout: Fluent Bit los recoge del fichero json-file de Docker -->
+    <appender name="JSON_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- trace_id / span_id los inyecta en el MDC el agente de OpenTelemetry -->
+            <includeMdcKeyName>trace_id</includeMdcKeyName>
+            <includeMdcKeyName>span_id</includeMdcKeyName>
+            <customFields>{"service":"${OTEL_SERVICE_NAME:-app-report}"}</customFields>
+        </encoder>
+    </appender>
+
+    <logger name="org.apache.cxf" level="WARN"/>
+
+    <root level="INFO">
+        <appender-ref ref="JSON_STDOUT"/>
+    </root>
+</configuration>
