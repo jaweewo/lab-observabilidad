@@ -19,49 +19,92 @@ de servicios SOAP en Java (Spring Boot + Apache CXF), instrumentada con OpenTele
   logs Docker ─▶ Fluent Bit ─▶ Loki ─┴──▶ Grafana
 ```
 
-| Servicio        | Puerto | Equivalente        | Operación SOAP                          |
-|-----------------|--------|--------------------|-----------------------------------------|
-| app-orquestador | 8080   | Orquestador        | `/ws/licencias` → `solicitarLicencia`   |
-| app-gestor      | 8081   | Gestor documental  | `/ws/documentos` → `registrarDocumento` |
-| app-report      | 8082   | ReportService      | `/ws/informes` → `generarInforme`       |
-| app-inside      | 8083   | INSIDE             | `/ws/expedientes` → `crearExpediente`   |
+| Servicio        | Puerto interno | Equivalente        | Operación SOAP                          |
+|-----------------|----------------|--------------------|-----------------------------------------|
+| app-orquestador | 8080 (publicado) | Orquestador      | `/ws/licencias` → `solicitarLicencia`   |
+| app-gestor      | 8081           | Gestor documental | `/ws/documentos` → `registrarDocumento` |
+| app-report      | 8082           | ReportService     | `/ws/informes` → `generarInforme`       |
+| app-inside      | 8083           | INSIDE            | `/ws/expedientes` → `crearExpediente`   |
 
 Cada servicio simula una latencia aleatoria de 50–200 ms y devuelve una respuesta fija.
 `app-orquestador` llama a los otros tres con `RestTemplate` **a través del fault-injector**, de modo
 que los fallos inyectados se reflejan en el flujo completo.
 
-## Requisitos
+Los servicios backend no publican puertos en el host: se prueban mediante la llamada SOAP del
+orquestador y se distinguen en la traza, las métricas y los logs. El ejercicio de fallos permite
+inyectar latencia o errores específicamente en cada backend.
 
-- Docker Engine 24+ con Docker Compose v2 (`docker compose`)
-- `make`, `bash` y `curl` (en Windows: WSL2 o Git Bash)
-- ~4 GB de RAM libres para los contenedores
-- Acceso a Internet en el primer build (descarga de imágenes, dependencias Maven y javaagents)
+## Requisitos y preparación de la VM
 
-> **Nota:** Fluent Bit lee los logs de `/var/lib/docker/containers`. Funciona en Linux y en
-> Docker Desktop con backend WSL2; en otros entornos puede que haya que ajustar esa ruta.
+- Ubuntu Server/Desktop 24.04 LTS en VirtualBox.
+- Recomendado: 4 vCPU, 8 GB de RAM y 25 GB de disco dinámico. El mínimo práctico es
+  4 GB libres para Docker; la compilación inicial también necesita memoria.
+- Red VirtualBox **NAT** con reglas de reenvío de puertos para acceder desde el equipo anfitrión.
+  No uses red en puente mientras estén habilitados los valores inseguros de Grafana descritos
+  más abajo.
+- Acceso a Internet durante la instalación y la primera compilación.
+
+Instala Docker Engine desde el repositorio oficial, junto con Git, Make y utilidades:
+
+```bash
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg git make
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  | sudo gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu noble stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"
+```
+
+Cierra sesión en Ubuntu y vuelve a entrar para que se aplique el grupo `docker`. Verifica:
+
+```bash
+docker --version
+docker compose version
+docker run --rm hello-world
+```
+
+En VirtualBox, en **Configuración → Red → Adaptador 1 → Avanzadas → Reenvío de puertos**,
+añade reglas TCP con IP anfitrión `127.0.0.1` y los mismos puertos anfitrión/invitado:
+`3000` (Grafana), `9090` (Prometheus), `16686` (Jaeger), `8080` (SOAP) y `9999` (fault-injector).
+Si usas Ubuntu dentro de la propia VM, también puedes abrir esas direcciones en `localhost`.
+No es necesario publicar puertos para Loki, Fluent Bit, el Collector ni los tres backends SOAP.
+
+> **Seguridad:** este laboratorio configura Grafana con `admin/admin` y acceso anónimo con rol
+> Admin. Es solo para una VM aislada y práctica local; no lo expongas a Internet ni a una red
+> compartida. Antes de usar una interfaz de red en puente, cambia la contraseña `admin` en
+> `docker-compose.yml` y desactiva `GF_AUTH_ANONYMOUS_ENABLED`.
+
+> **Nota de logs:** Fluent Bit lee `/var/lib/docker/containers`, que corresponde a Docker Engine
+> en Ubuntu con el driver de logs predeterminado. Si cambias `data-root`, usas Docker rootless o
+> un driver distinto, tendrás que adaptar el volumen de Fluent Bit.
 
 ## Puesta en marcha
 
 ```bash
-# 1. Clonar
-git clone https://github.com/<tu-usuario>/lab-observabilidad.git
+git clone https://github.com/jaweewo/lab-observabilidad.git
 cd lab-observabilidad
 
-# 2. Descargar las imágenes base
-docker compose pull --ignore-buildable
-
-# 3. Construir los servicios Java y el fault-injector
+# Comprueba la configuración y compila los cuatro servicios Java y el fault-injector.
+docker compose config --quiet
 make build
 
-# 4. Arrancar
+# Arranca el stack; las JVM pueden tardar alrededor de un minuto.
 make up
-
-# 5. Comprobar que todo responde (puede tardar ~1 min en arrancar las JVM)
 ./scripts/check-lab.sh
 
-# 6. Generar tráfico y obtener un Trace ID
+# Envía una solicitud SOAP y muestra el Trace ID para buscar en Jaeger.
 ./scripts/smoke-test.sh
 ```
+
+El primer `make build` descarga imágenes base, dependencias Maven y agentes de instrumentación.
+El resto de ejercicios reproducibles está en [ejercicios_practicos/](./ejercicios_practicos/);
+el propósito y los límites de cada componente se explican en [summary.md](./summary.md).
 
 ### Comandos `make`
 
@@ -79,13 +122,13 @@ Para empezar totalmente de cero (borra volúmenes e imágenes de los servicios y
 
 ## URLs
 
-| Componente      | URL                                         | Descripción                                             |
-|-----------------|---------------------------------------------|---------------------------------------------------------|
-| Grafana         | http://localhost:3000                       | Dashboards, Explore de Loki/Prometheus/Jaeger (admin/admin, acceso anónimo habilitado) |
-| Prometheus      | http://localhost:9090                       | Métricas OTel (vía collector) y JMX de cada JVM         |
-| Jaeger          | http://localhost:16686                      | Búsqueda y visualización de trazas distribuidas        |
-| app-orquestador      | http://localhost:8080/ws/licencias?wsdl     | WSDL del orquestador SOAP                               |
-| fault-injector  | http://localhost:9999/fault                 | API de inyección de fallos                              |
+| Componente     | URL                                     | Descripción                                                                 |
+|----------------|-----------------------------------------|-----------------------------------------------------------------------------|
+| Grafana        | http://localhost:3000                   | Dashboards y Explore de Loki/Prometheus/Jaeger (admin/admin, acceso anónimo) |
+| Prometheus     | http://localhost:9090                   | Métricas OTel (vía Collector) y JMX de cada JVM                            |
+| Jaeger         | http://localhost:16686                  | Búsqueda y visualización de trazas distribuidas                            |
+| app-orquestador| http://localhost:8080/ws/licencias?wsdl | WSDL del orquestador SOAP                                                   |
+| fault-injector | http://localhost:9999/fault             | API de inyección de fallos                                                  |
 
 En Grafana se aprovisiona el dashboard **Laboratorio → Lab Observabilidad — Visión general** y los
 datasources Prometheus, Loki y Jaeger, enlazados entre sí: desde una línea de log se salta a su

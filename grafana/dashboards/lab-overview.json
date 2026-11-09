@@ -18,8 +18,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (job) (rate(http_server_request_duration_seconds_count[1m]))",
-          "legendFormat": "{{job}}"
+          "expr": "sum by (service_name) (rate(http_server_request_duration_seconds_count[1m]))",
+          "legendFormat": "{{service_name}}"
         }
       ]
     },
@@ -33,8 +33,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (job, le) (rate(http_server_request_duration_seconds_bucket[1m])))",
-          "legendFormat": "{{job}}"
+          "expr": "histogram_quantile(0.95, sum by (service_name, le) (rate(http_server_request_duration_seconds_bucket[1m])))",
+          "legendFormat": "{{service_name}}"
         }
       ]
     },
@@ -48,8 +48,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (job) (rate(http_server_request_duration_seconds_count{http_response_status_code=~\"5..\"}[1m]))",
-          "legendFormat": "{{job}}"
+          "expr": "sum by (service_name) (rate(http_server_request_duration_seconds_count{http_response_status_code=~\"5..\"}[1m]))",
+          "legendFormat": "{{service_name}}"
         }
       ]
     },
